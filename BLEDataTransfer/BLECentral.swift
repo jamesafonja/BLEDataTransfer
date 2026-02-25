@@ -20,6 +20,12 @@ final class BLECentral: NSObject, ObservableObject {
     @Published var bluetoothState: String = ""
     @Published var stringFromData: String = ""
     
+    static let shared = BLECentral()
+    
+    private override init() {
+        super.init()
+    }
+    
     private lazy var centralManager: CBCentralManager = { [unowned self] () -> CBCentralManager in
         CBCentralManager(
             delegate: self,
@@ -34,13 +40,13 @@ final class BLECentral: NSObject, ObservableObject {
     
     func getPeripheral() {
         // Retrieve only peripherals that meet a known service criteria
-        connectedPeripherals = centralManager.retrieveConnectedPeripherals(withServices: [TargetDevice.serviceUUID])
+        connectedPeripherals = centralManager.retrieveConnectedPeripherals(withServices: [TargetService.serviceUUID])
         
         if let connectedPeripheral = connectedPeripherals.last {
             centralManager.connect(connectedPeripheral)
             self.selectedPeripheral = connectedPeripheral
         } else {
-            centralManager.scanForPeripherals(withServices: [TargetDevice.serviceUUID])
+            centralManager.scanForPeripherals(withServices: [TargetService.serviceUUID])
         }
     }
     
@@ -52,13 +58,19 @@ final class BLECentral: NSObject, ObservableObject {
         
         for service in selectedPeripheral.services ?? [] {
             for characteristic in service.characteristics ?? [] {
-                if characteristic.uuid == TargetDevice.characteristicUUID && characteristic.isNotifying {
+                if characteristic.uuid == TargetService.characteristicUUID && characteristic.isNotifying {
                     self.selectedPeripheral?.setNotifyValue(false, for: characteristic)
                 }
             }
         }
         
         centralManager.cancelPeripheralConnection(selectedPeripheral)
+    }
+    
+    func stop() {
+        centralManager.stopScan()
+        bluetoothState = "Scanning stopped"
+        data.removeAll(keepingCapacity: false)
     }
     
     private func writeData() {
@@ -132,13 +144,32 @@ extension BLECentral: CBCentralManagerDelegate {
         data.removeAll(keepingCapacity: false)
         
         peripheral.delegate = self
-        peripheral.discoverServices([TargetDevice.serviceUUID])
+        peripheral.discoverServices([TargetService.serviceUUID])
     }
 }
 
 // MARK: - CBPeripheralDelegate
 
 extension BLECentral: CBPeripheralDelegate {
+        
+    func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: (any Error)?) {
+        if let error = error {
+            bluetoothState = String(format: "Error discovering services: $s", error.localizedDescription)
+            return
+        }
+        
+        guard let peripheralService = peripheral.services else { return }
+        
+        for service in peripheralService {
+            peripheral.discoverCharacteristics([TargetService.characteristicUUID], for: service)
+        }
+    }
+    
+    func peripheral(_ peripheral: CBPeripheral, didModifyServices invalidatedServices: [CBService]) {
+        for service in invalidatedServices where service.uuid == TargetService.serviceUUID {
+            peripheral.discoverServices([TargetService.serviceUUID])
+        }
+    }
     
     func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: (any Error)?) {
         if let error = error {
@@ -149,7 +180,7 @@ extension BLECentral: CBPeripheralDelegate {
         
         guard let serviceCharacteristics = service.characteristics else { return }
         
-        for characteristic in serviceCharacteristics where characteristic.uuid == TargetDevice.characteristicUUID {
+        for characteristic in serviceCharacteristics where characteristic.uuid == TargetService.characteristicUUID {
             targetCharacteristic = characteristic
             peripheral.setNotifyValue(true, for: characteristic)
         }
@@ -179,6 +210,27 @@ extension BLECentral: CBPeripheralDelegate {
         } else {
             data.append(characteristicData)
         }
+    }
+    
+    func peripheral(_ peripheral: CBPeripheral, didUpdateNotificationStateFor characteristic: CBCharacteristic, error: (any Error)?) {
+        if let error = error {
+            bluetoothState = String(format: "Error changing notification state: %s", error.localizedDescription)
+            return
+        }
+        
+        guard characteristic.uuid == TargetService.characteristicUUID else { return }
+        
+        if characteristic.isNotifying {
+            bluetoothState = String(format: "Notification began on %@", characteristic)
+        } else {
+            bluetoothState = String(format: "Notification stopped on %@. Disconnecting", characteristic)
+            cleanUp()
+        }
+    }
+    
+    func peripheralIsReady(toSendWriteWithoutResponse peripheral: CBPeripheral) {
+        bluetoothState = "Peripheral is ready, send data"
+        writeData()
     }
     
 }
