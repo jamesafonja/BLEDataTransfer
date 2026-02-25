@@ -8,15 +8,15 @@
 import Combine
 import CoreBluetooth
 import Foundation
-import os
 
 @MainActor
 final class BLECentral: NSObject, ObservableObject {
     @Published var isOn: Bool = false
     @Published var connectedPeripherals: [CBPeripheral] = []
     @Published var selectedPeripheral: CBPeripheral?
-    @Published var transferCharacteristic: CBCharacteristic?
+    @Published var targetCharacteristic: CBCharacteristic?
     @Published var data = Data()
+    @Published var characteristicText: String = ""
     @Published var bluetoothState: String = ""
     @Published var stringFromData: String = ""
     
@@ -64,7 +64,7 @@ final class BLECentral: NSObject, ObservableObject {
     private func writeData() {
         guard
             let selectedPeripheral = selectedPeripheral,
-            let transferCharacteristic = transferCharacteristic
+            let transferCharacteristic = targetCharacteristic
         else { return }
         
         while (writeIterationsComplete < maxIterations) && (selectedPeripheral.canSendWriteWithoutResponse) {
@@ -131,11 +131,54 @@ extension BLECentral: CBCentralManagerDelegate {
         
         data.removeAll(keepingCapacity: false)
         
-        // Peripheral delegate functions need to be implemented
-//        peripheral.delegate = self
-//        peripheral.discoverServices([TargetDevice.serviceUUID])
+        peripheral.delegate = self
+        peripheral.discoverServices([TargetDevice.serviceUUID])
     }
 }
 
 // MARK: - CBPeripheralDelegate
 
+extension BLECentral: CBPeripheralDelegate {
+    
+    func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: (any Error)?) {
+        if let error = error {
+            bluetoothState = String(format: "Error discovering cgaracteristics: %s", String(describing: error))
+            cleanUp()
+            return
+        }
+        
+        guard let serviceCharacteristics = service.characteristics else { return }
+        
+        for characteristic in serviceCharacteristics where characteristic.uuid == TargetDevice.characteristicUUID {
+            targetCharacteristic = characteristic
+            peripheral.setNotifyValue(true, for: characteristic)
+        }
+        
+    }
+    
+    func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: (any Error)?) {
+        if let error = error {
+            bluetoothState = String(format: "Error discovering characteristics %s", error.localizedDescription)
+            cleanUp()
+            return
+        }
+        
+        guard
+            let characteristicData = characteristic.value,
+            let stringFromData = String(data: characteristicData, encoding: .utf8)
+        else { return }
+        
+        bluetoothState = String(format: "Received %d bytes: %s", characteristicData.count, stringFromData)
+        
+        if
+            stringFromData == "EOM",
+            let text = String(data: self.data, encoding: .utf8)
+        {
+            self.characteristicText = text
+            writeData()
+        } else {
+            data.append(characteristicData)
+        }
+    }
+    
+}
