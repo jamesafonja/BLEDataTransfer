@@ -7,10 +7,14 @@
 
 import Combine
 import CoreBluetooth
-import Foundation
+
+// MARK: - BLECentralManager
+/*
+ TODO: Decouple business logic and view-related functions using MVVM
+ */
 
 @MainActor
-final class BLECentral: NSObject, ObservableObject {
+final class BLECentralManager: NSObject, ObservableObject {
     @Published var isOn: Bool = false
     @Published var connectedPeripherals: [CBPeripheral] = []
     @Published var selectedPeripheral: CBPeripheral?
@@ -20,7 +24,7 @@ final class BLECentral: NSObject, ObservableObject {
     @Published var bluetoothState: String = ""
     @Published var stringFromData: String = ""
     
-    static let shared = BLECentral()
+    static let shared = BLECentralManager()
     
     private override init() {
         super.init()
@@ -103,7 +107,7 @@ final class BLECentral: NSObject, ObservableObject {
 
 // MARK: - CBCentralManagerDelegate
 
-extension BLECentral: CBCentralManagerDelegate {
+extension BLECentralManager: CBCentralManagerDelegate {
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
         self.isOn = central.state == .poweredOn
         bluetoothState = central.state.description
@@ -150,7 +154,7 @@ extension BLECentral: CBCentralManagerDelegate {
 
 // MARK: - CBPeripheralDelegate
 
-extension BLECentral: CBPeripheralDelegate {
+extension BLECentralManager: CBPeripheralDelegate {
         
     func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: (any Error)?) {
         if let error = error {

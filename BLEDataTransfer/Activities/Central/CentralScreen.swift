@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct CentralScreen: View {
+
     var body: some View {
         Text("Hello, World!")
     }
