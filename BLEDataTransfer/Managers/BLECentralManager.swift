@@ -45,8 +45,17 @@ final class BLECentralManager: NSObject {
             self.selectedPeripheral = connectedPeripheral
         } else {
             // centralManager.scanForPeripherals(withServices: [TargetService.serviceUUID])
-            centralManager.scanForPeripherals(withServices: nil, options: [CBCentralManagerScanOptionAllowDuplicatesKey: true])
+            centralManager.scanForPeripherals(withServices: nil, options: [CBCentralManagerScanOptionAllowDuplicatesKey: false])
         }
+    }
+    
+    func startScanning() {
+        centralManager.scanForPeripherals(withServices: nil, options: [CBCentralManagerScanOptionAllowDuplicatesKey: false])
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+            self.centralManager.stopScan()
+        }
+
     }
     
     private func cleanUp() {
@@ -118,7 +127,7 @@ extension BLECentralManager: CBCentralManagerDelegate {
 //        didDiscover peripheral: CBPeripheral,
 //        advertisementData: [String : Any], rssi RSSI: NSNumber
 //    ) {
-//        guard RSSI.intValue >= -50 else {
+//        guard RSSI.intValue >= -75 else {
 //            bluetoothState = "Discovered peripheral not in expected range, at \(RSSI.intValue)"
 //            return
 //        }
@@ -138,7 +147,8 @@ extension BLECentralManager: CBCentralManagerDelegate {
         advertisementData: [String : Any],
         rssi RSSI: NSNumber
     ) {
-        guard RSSI.intValue >= -50 else { return }
+        guard RSSI.intValue >= -40 else { return }
+        
         delegate?.didDiscover(peripheral: peripheral, rssi: RSSI.intValue)
     }
     

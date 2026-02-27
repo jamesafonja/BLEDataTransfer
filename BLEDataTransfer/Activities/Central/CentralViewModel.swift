@@ -38,20 +38,30 @@ extension CentralViewModel: BLECentralManagerDelegate {
     }
     
     func didDiscover(peripheral: CBPeripheral, rssi: Int) {
-        let name = peripheral.name ?? "Unknown"
+        guard
+            profiles.count < 20,
+            rssi > -75
+        else { return }
         
         if let index = profiles.firstIndex(where: { $0.id == peripheral.identifier }) {
             profiles[index].rssi = rssi
         } else {
             let profile = PeripheralProfile(
                 id: peripheral.identifier,
-                name: name,
+                name: name(for: peripheral),
                 rssi: rssi,
                 peripheral: peripheral
             )
             
             profiles.append(profile)
         }
+        
+        configureProfiles()
+    }
+    
+    func configureProfiles() {
+        profiles.sort { $0.rssi > $1.rssi }
+        profiles = Array(profiles.prefix(10))
     }
     
     func didFailToConnect(peripheral: CBPeripheral, error: (any Error)?) {
@@ -64,3 +74,16 @@ extension CentralViewModel: BLECentralManagerDelegate {
 
 }
 
+extension CentralViewModel {
+    func name(for peripheral: CBPeripheral) -> String {
+        if
+            let peripheralName = peripheral.name,
+            !peripheralName.isEmpty
+        {
+            return peripheralName
+        } else {
+            return "Unknown"
+        }
+    }
+    
+}
