@@ -24,19 +24,24 @@ final class BLECentralManager: NSObject, ObservableObject {
     @Published var bluetoothState: String = ""
     @Published var stringFromData: String = ""
     
+    private var centralManager: CBCentralManager!
+    
     static let shared = BLECentralManager()
     
     private override init() {
         super.init()
+        
+        centralManager = CBCentralManager(delegate: self, queue: nil, options: [CBCentralManagerOptionShowPowerAlertKey: true])
+
     }
     
-    private lazy var centralManager: CBCentralManager = { [unowned self] () -> CBCentralManager in
-        CBCentralManager(
-            delegate: self,
-            queue: nil,
-            options: [CBCentralManagerOptionShowPowerAlertKey: true]
-        )
-    }()
+//    private lazy var centralManager: CBCentralManager = { [unowned self] () -> CBCentralManager in
+//        CBCentralManager(
+//            delegate: self,
+//            queue: nil,
+//            options: [CBCentralManagerOptionShowPowerAlertKey: true]
+//        )
+//    }()
     
     var writeIterationsComplete: Int = 0
     var connectionIterationsComplete: Int = 0
@@ -109,8 +114,15 @@ final class BLECentralManager: NSObject, ObservableObject {
 
 extension BLECentralManager: CBCentralManagerDelegate {
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
-        self.isOn = central.state == .poweredOn
-        bluetoothState = central.state.description
+        print("Current central state is: \(central.state.description)")
+        Task {
+            self.isOn = central.state == .poweredOn
+            bluetoothState = central.state.description
+            
+            if self.isOn {
+                getPeripheral() // Start scanning automatically when powered on
+            }
+        }
     }
     
     func centralManager(

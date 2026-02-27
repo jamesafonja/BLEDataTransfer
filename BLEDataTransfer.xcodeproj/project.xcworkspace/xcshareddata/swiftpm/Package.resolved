@@ -1,0 +1,15 @@
+{
+  "originHash" : "9dba57918d7dc6450dcdecebae1e5198cbaa82bcaf032b5849ed58832d158d66",
+  "pins" : [
+    {
+      "identity" : "impossible",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/mickeyl/ImpossiBLE",
+      "state" : {
+        "revision" : "06372f9885d9cc0de621e2af1052fc8d2fc09bb1",
+        "version" : "0.4.0"
+      }
+    }
+  ],
+  "version" : 3
+}

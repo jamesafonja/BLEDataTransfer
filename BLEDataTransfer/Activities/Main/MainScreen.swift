@@ -12,7 +12,7 @@ struct MainScreen: View {
         NavigationStack {
             VStack(spacing: 30) {
                 NavigationLink {
-                    
+                    CentralScreen()
                 } label: {
                     Text("Central")
                         .padding(12)
@@ -23,7 +23,7 @@ struct MainScreen: View {
                 }
                 
                 NavigationLink {
-                    
+                    PeripheralScreen()
                 } label: {
                     Text("Peripheral")
                         .padding(12)
