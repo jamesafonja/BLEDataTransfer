@@ -9,6 +9,6 @@ import CoreBluetooth
 import Foundation
 
 struct TargetService {
-    static let serviceUUID = CBUUID(string: "12345678-E5F6-7890-1234-56789ABCDEF0")
+    static let serviceUUID = CBUUID(string: "DB5B50F4-43DC-756B-0E84-07D9D2DBDB5C")
     static let characteristicUUID = CBUUID(string: "87654321-E5F6-7890-1234-56789ABCDEF0")
 }

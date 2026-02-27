@@ -9,40 +9,29 @@ import Combine
 import CoreBluetooth
 
 // MARK: - BLECentralManager
-/*
- TODO: Decouple business logic and view-related functions using MVVM
- */
 
-@MainActor
-final class BLECentralManager: NSObject, ObservableObject {
-    @Published var isOn: Bool = false
-    @Published var connectedPeripherals: [CBPeripheral] = []
-    @Published var selectedPeripheral: CBPeripheral?
-    @Published var targetCharacteristic: CBCharacteristic?
-    @Published var data = Data()
-    @Published var characteristicText: String = ""
-    @Published var bluetoothState: String = ""
-    @Published var stringFromData: String = ""
+protocol BLECentralManagerDelegate: AnyObject {
+    func didUpdateState(isOn: Bool)
+    func didDiscover(peripheral: CBPeripheral, rssi: Int)
+    func didFailToConnect(peripheral: CBPeripheral, error: (any Error)?)
+    func didConnect(peripheral: CBPeripheral)
+}
+
+final class BLECentralManager: NSObject {
+    weak var delegate: BLECentralManagerDelegate?
     
     private var centralManager: CBCentralManager!
+    private var selectedPeripheral: CBPeripheral?
+    private var targetCharacteristic: CBCharacteristic?
+    private var connectedPeripherals: [CBPeripheral] = []
+    private var data = Data()
     
-    static let shared = BLECentralManager()
-    
-    private override init() {
+    override init() {
         super.init()
         
         centralManager = CBCentralManager(delegate: self, queue: nil, options: [CBCentralManagerOptionShowPowerAlertKey: true])
-
     }
-    
-//    private lazy var centralManager: CBCentralManager = { [unowned self] () -> CBCentralManager in
-//        CBCentralManager(
-//            delegate: self,
-//            queue: nil,
-//            options: [CBCentralManagerOptionShowPowerAlertKey: true]
-//        )
-//    }()
-    
+        
     var writeIterationsComplete: Int = 0
     var connectionIterationsComplete: Int = 0
     var maxIterations: Int = 5
@@ -55,7 +44,8 @@ final class BLECentralManager: NSObject, ObservableObject {
             centralManager.connect(connectedPeripheral)
             self.selectedPeripheral = connectedPeripheral
         } else {
-            centralManager.scanForPeripherals(withServices: [TargetService.serviceUUID])
+            // centralManager.scanForPeripherals(withServices: [TargetService.serviceUUID])
+            centralManager.scanForPeripherals(withServices: nil, options: [CBCentralManagerScanOptionAllowDuplicatesKey: true])
         }
     }
     
@@ -76,12 +66,12 @@ final class BLECentralManager: NSObject, ObservableObject {
         centralManager.cancelPeripheralConnection(selectedPeripheral)
     }
     
-    func stop() {
+    func stopScanning() {
         centralManager.stopScan()
-        bluetoothState = "Scanning stopped"
+        // bluetoothState = "Scanning stopped"
         data.removeAll(keepingCapacity: false)
     }
-    
+        
     private func writeData() {
         guard
             let selectedPeripheral = selectedPeripheral,
@@ -96,7 +86,7 @@ final class BLECentralManager: NSObject, ObservableObject {
             data.copyBytes(to: &rawPacket, count: bytesToCopy)
             
             let packetData = Data(bytes: &rawPacket, count: bytesToCopy)
-            stringFromData = String(data: packetData, encoding: .utf8) ?? "Could not convert data"
+            // stringFromData = String(data: packetData, encoding: .utf8) ?? "Could not convert data"
             
             selectedPeripheral.writeValue(packetData, for: transferCharacteristic, type: .withoutResponse)
             
@@ -115,44 +105,52 @@ final class BLECentralManager: NSObject, ObservableObject {
 extension BLECentralManager: CBCentralManagerDelegate {
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
         print("Current central state is: \(central.state.description)")
-        Task {
-            self.isOn = central.state == .poweredOn
-            bluetoothState = central.state.description
-            
-            if self.isOn {
-                getPeripheral() // Start scanning automatically when powered on
-            }
+        
+        delegate?.didUpdateState(isOn: central.state == .poweredOn)
+        
+        if central.state == .poweredOn {
+            getPeripheral()
         }
     }
+    
+//    func centralManager(
+//        _ central: CBCentralManager,
+//        didDiscover peripheral: CBPeripheral,
+//        advertisementData: [String : Any], rssi RSSI: NSNumber
+//    ) {
+//        guard RSSI.intValue >= -50 else {
+//            bluetoothState = "Discovered peripheral not in expected range, at \(RSSI.intValue)"
+//            return
+//        }
+//        
+//        bluetoothState = "Discovered \(peripheral.name ?? "Unknown") at \(RSSI.intValue)"
+//        
+//        if selectedPeripheral != peripheral {
+//            selectedPeripheral = peripheral
+//            bluetoothState = "Connecting to peripheral \(peripheral.name ?? "Unknown")"
+//            centralManager.connect(peripheral, options: nil)
+//        }
+//    }
     
     func centralManager(
         _ central: CBCentralManager,
         didDiscover peripheral: CBPeripheral,
-        advertisementData: [String : Any], rssi RSSI: NSNumber
+        advertisementData: [String : Any],
+        rssi RSSI: NSNumber
     ) {
-        guard RSSI.intValue >= -50 else {
-            bluetoothState = String(format: "Discovered peripheral not in expected range, at %d", RSSI.intValue)
-            return
-        }
-        
-        bluetoothState = String(format: "Discovered %s at %d", String(describing: peripheral.name), RSSI.intValue)
-        
-        if selectedPeripheral != peripheral {
-            selectedPeripheral = peripheral
-            bluetoothState = "Connecting to peripheral \(peripheral.name ?? "Unknown")"
-            centralManager.connect(peripheral, options: nil)
-        }
+        guard RSSI.intValue >= -50 else { return }
+        delegate?.didDiscover(peripheral: peripheral, rssi: RSSI.intValue)
     }
     
     func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: (any Error)?) {
-        bluetoothState = String(format: "Failed to connect to %@. %s", peripheral, String(describing: error))
+        delegate?.didFailToConnect(peripheral: peripheral, error: error)
         cleanUp()
     }
     
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
-        bluetoothState = "Peripheral connected"
+        // bluetoothState = "Peripheral connected"
         centralManager.stopScan()
-        bluetoothState = "Scanning stopped"
+        // bluetoothState = "Scanning stopped"
         
         connectionIterationsComplete += 1
         writeIterationsComplete = 0
@@ -161,6 +159,8 @@ extension BLECentralManager: CBCentralManagerDelegate {
         
         peripheral.delegate = self
         peripheral.discoverServices([TargetService.serviceUUID])
+        
+        delegate?.didConnect(peripheral: peripheral)
     }
 }
 
@@ -170,7 +170,7 @@ extension BLECentralManager: CBPeripheralDelegate {
         
     func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: (any Error)?) {
         if let error = error {
-            bluetoothState = String(format: "Error discovering services: $s", error.localizedDescription)
+            // bluetoothState = "Error discovering services: \(error.localizedDescription)"
             return
         }
         
@@ -189,7 +189,7 @@ extension BLECentralManager: CBPeripheralDelegate {
     
     func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: (any Error)?) {
         if let error = error {
-            bluetoothState = String(format: "Error discovering cgaracteristics: %s", String(describing: error))
+            // bluetoothState = "Error discovering characteristics: \(error.localizedDescription)"
             cleanUp()
             return
         }
@@ -205,7 +205,7 @@ extension BLECentralManager: CBPeripheralDelegate {
     
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: (any Error)?) {
         if let error = error {
-            bluetoothState = String(format: "Error discovering characteristics %s", error.localizedDescription)
+            // bluetoothState = "Error discovering characteristics: \(error.localizedDescription)"
             cleanUp()
             return
         }
@@ -215,13 +215,13 @@ extension BLECentralManager: CBPeripheralDelegate {
             let stringFromData = String(data: characteristicData, encoding: .utf8)
         else { return }
         
-        bluetoothState = String(format: "Received %d bytes: %s", characteristicData.count, stringFromData)
+        // bluetoothState = "Received \(characteristicData.count) bytes: \(stringFromData)"
         
         if
             stringFromData == "EOM",
             let text = String(data: self.data, encoding: .utf8)
         {
-            self.characteristicText = text
+            // self.characteristicText = text
             writeData()
         } else {
             data.append(characteristicData)
@@ -230,22 +230,22 @@ extension BLECentralManager: CBPeripheralDelegate {
     
     func peripheral(_ peripheral: CBPeripheral, didUpdateNotificationStateFor characteristic: CBCharacteristic, error: (any Error)?) {
         if let error = error {
-            bluetoothState = String(format: "Error changing notification state: %s", error.localizedDescription)
+            // bluetoothState = "Error changing notification state: \(error.localizedDescription)"
             return
         }
         
         guard characteristic.uuid == TargetService.characteristicUUID else { return }
         
         if characteristic.isNotifying {
-            bluetoothState = String(format: "Notification began on %@", characteristic)
+            // bluetoothState = "Notification began on \(characteristic)"
         } else {
-            bluetoothState = String(format: "Notification stopped on %@. Disconnecting", characteristic)
+            // bluetoothState = "Notification stopped on \(characteristic). Disconnecting..."
             cleanUp()
         }
     }
     
     func peripheralIsReady(toSendWriteWithoutResponse peripheral: CBPeripheral) {
-        bluetoothState = "Peripheral is ready, send data"
+        // bluetoothState = "Peripheral is ready, send data"
         writeData()
     }
     

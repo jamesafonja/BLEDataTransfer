@@ -9,37 +9,37 @@ import CoreBluetooth
 import SwiftUI
 
 struct CentralScreen: View {
-    @StateObject var manager: BLECentralManager
+    @StateObject var centralViewModel: CentralViewModel
     
     init() {
-        let manager = BLECentralManager.shared
-        _manager = StateObject(wrappedValue: manager)
+        let manager = BLECentralManager()
+        let viewModel = CentralViewModel(manager: manager)
+        _centralViewModel = StateObject(wrappedValue: viewModel)
     }
 
     var body: some View {
         VStack(alignment: .leading) {
             List {
-                Section("BLE Status") {
+                Section("BLE") {
                     HStack {
-                        Text("Status")
+                        Text("Connection")
                         Spacer()
-                        Text(manager.isOn ? "On" : "Off")
-                            .foregroundColor(manager.isOn ? .green : .red)
+                        Text(centralViewModel.isOn ? "On" : "Off")
+                            .foregroundColor(centralViewModel.isOn ? .green : .red)
                     }
                 }
                 
                 Section("Devices") {
-                    ForEach(manager.connectedPeripherals, id: \.self) { peripheral in
-                        Text(peripheral.name ?? "Unknown")
-                            .padding()
+                    ForEach(centralViewModel.profiles) { profile in
+                        Text(profile.name)
                     }
                 }
             }
             Spacer()
         }
         .navigationTitle("Central")
-        .onReceive(manager.$isOn) { value in
-            debugPrint("manager.isOn changed:", value)
+        .onReceive(centralViewModel.$isOn) { value in
+            debugPrint("centralViewModel.isOn changed:", value)
         }
 
     }
