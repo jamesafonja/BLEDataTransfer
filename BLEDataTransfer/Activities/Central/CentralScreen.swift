@@ -11,8 +11,7 @@ import SwiftUI
 struct CentralScreen: View {
     @StateObject var centralViewModel: CentralViewModel
     
-    init() {
-        let manager = BLECentralManager()
+    init(manager: BLECentralManager) {
         let viewModel = CentralViewModel(manager: manager)
         _centralViewModel = StateObject(wrappedValue: viewModel)
     }
@@ -46,5 +45,5 @@ struct CentralScreen: View {
 }
 
 #Preview {
-    CentralScreen()
+    CentralScreen(manager: BLECentralManager())
 }

@@ -12,7 +12,7 @@ struct MainScreen: View {
         NavigationStack {
             VStack(spacing: 30) {
                 NavigationLink {
-                    CentralScreen()
+                    CentralScreen(manager: BLECentralManager())
                 } label: {
                     Text("Central")
                         .padding(12)

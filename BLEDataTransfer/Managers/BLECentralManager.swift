@@ -17,7 +17,16 @@ protocol BLECentralManagerDelegate: AnyObject {
     func didConnect(peripheral: CBPeripheral)
 }
 
-final class BLECentralManager: NSObject {
+// MARK: - CentralManagerProtocol
+
+protocol CentralManagerProtocol {
+    func startScanning()
+    func stopScanning()
+}
+
+// MARK: - BLECentralManager
+
+final class BLECentralManager: NSObject, CentralManagerProtocol {
     weak var delegate: BLECentralManagerDelegate?
     
     private var centralManager: CBCentralManager!
@@ -36,6 +45,9 @@ final class BLECentralManager: NSObject {
     var connectionIterationsComplete: Int = 0
     var maxIterations: Int = 5
     
+    var connectionAttempts: Int = 0
+    let maxConnectionRetries: Int = 5
+    
     func getPeripheral() {
         // Retrieve only peripherals that meet a known service criteria
         connectedPeripherals = centralManager.retrieveConnectedPeripherals(withServices: [TargetService.serviceUUID])
@@ -44,8 +56,8 @@ final class BLECentralManager: NSObject {
             centralManager.connect(connectedPeripheral)
             self.selectedPeripheral = connectedPeripheral
         } else {
-            // centralManager.scanForPeripherals(withServices: [TargetService.serviceUUID])
-            centralManager.scanForPeripherals(withServices: nil, options: [CBCentralManagerScanOptionAllowDuplicatesKey: false])
+            centralManager.scanForPeripherals(withServices: [TargetService.serviceUUID])
+            // centralManager.scanForPeripherals(withServices: nil, options: [CBCentralManagerScanOptionAllowDuplicatesKey: false])
         }
     }
     
@@ -171,6 +183,24 @@ extension BLECentralManager: CBCentralManagerDelegate {
         peripheral.discoverServices([TargetService.serviceUUID])
         
         delegate?.didConnect(peripheral: peripheral)
+    }
+    
+    func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: (any Error)?) {
+        if let error = error {
+            print(error.localizedDescription)
+        }
+        
+        if connectionAttempts < maxConnectionRetries {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
+                guard central.state == .poweredOn else {
+                    print("Unable to retry connection: central not powered on.")
+                    return
+                }
+
+                self?.centralManager.connect(peripheral)
+                self?.connectionAttempts += 1
+            }
+        }
     }
 }
 
