@@ -56,8 +56,8 @@ final class BLECentralManager: NSObject, CentralManagerProtocol {
             centralManager.connect(connectedPeripheral)
             self.selectedPeripheral = connectedPeripheral
         } else {
-            centralManager.scanForPeripherals(withServices: [TargetService.serviceUUID])
-            // centralManager.scanForPeripherals(withServices: nil, options: [CBCentralManagerScanOptionAllowDuplicatesKey: false])
+            // centralManager.scanForPeripherals(withServices: [TargetService.serviceUUID])
+            centralManager.scanForPeripherals(withServices: nil, options: [CBCentralManagerScanOptionAllowDuplicatesKey: false])
         }
     }
     
@@ -134,32 +134,13 @@ extension BLECentralManager: CBCentralManagerDelegate {
         }
     }
     
-//    func centralManager(
-//        _ central: CBCentralManager,
-//        didDiscover peripheral: CBPeripheral,
-//        advertisementData: [String : Any], rssi RSSI: NSNumber
-//    ) {
-//        guard RSSI.intValue >= -75 else {
-//            bluetoothState = "Discovered peripheral not in expected range, at \(RSSI.intValue)"
-//            return
-//        }
-//        
-//        bluetoothState = "Discovered \(peripheral.name ?? "Unknown") at \(RSSI.intValue)"
-//        
-//        if selectedPeripheral != peripheral {
-//            selectedPeripheral = peripheral
-//            bluetoothState = "Connecting to peripheral \(peripheral.name ?? "Unknown")"
-//            centralManager.connect(peripheral, options: nil)
-//        }
-//    }
-    
     func centralManager(
         _ central: CBCentralManager,
         didDiscover peripheral: CBPeripheral,
         advertisementData: [String : Any],
         rssi RSSI: NSNumber
     ) {
-        guard RSSI.intValue >= -40 else { return }
+        guard RSSI.intValue >= -50 else { return }
         
         delegate?.didDiscover(peripheral: peripheral, rssi: RSSI.intValue)
     }
@@ -170,7 +151,7 @@ extension BLECentralManager: CBCentralManagerDelegate {
     }
     
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
-        // bluetoothState = "Peripheral connected"
+        print("Peripheral connected")
         centralManager.stopScan()
         // bluetoothState = "Scanning stopped"
         

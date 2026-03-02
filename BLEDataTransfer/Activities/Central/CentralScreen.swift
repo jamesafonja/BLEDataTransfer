@@ -17,30 +17,30 @@ struct CentralScreen: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading) {
-            List {
-                Section("BLE") {
-                    HStack {
-                        Text("Connection")
-                        Spacer()
-                        Text(centralViewModel.isOn ? "On" : "Off")
-                            .foregroundColor(centralViewModel.isOn ? .green : .red)
-                    }
+        List {
+            Section("BLE") {
+                HStack {
+                    Text("Connection")
+                    Spacer()
+                    Text(centralViewModel.isOn ? "On" : "Off")
+                        .foregroundColor(centralViewModel.isOn ? .green : .red)
                 }
-                
-                Section("Devices") {
-                    ForEach(centralViewModel.profiles) { profile in
+            }
+            
+            Section("Devices") {
+                ForEach(centralViewModel.profiles) { profile in
+                    HStack {
                         Text(profile.name)
+                        Spacer()
+                        SignalStrengthIndicator(rssi: profile.rssi)
                     }
                 }
             }
-            Spacer()
         }
         .navigationTitle("Central")
         .onReceive(centralViewModel.$isOn) { value in
             debugPrint("centralViewModel.isOn changed:", value)
         }
-
     }
 }
 

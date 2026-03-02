@@ -40,7 +40,7 @@ extension CentralViewModel: BLECentralManagerDelegate {
     func didDiscover(peripheral: CBPeripheral, rssi: Int) {
         guard
             profiles.count < 20,
-            rssi > -75
+            rssi > -75 // Additional filtering to keep count low
         else { return }
         
         if let index = profiles.firstIndex(where: { $0.id == peripheral.identifier }) {
@@ -52,6 +52,8 @@ extension CentralViewModel: BLECentralManagerDelegate {
                 rssi: rssi,
                 peripheral: peripheral
             )
+            
+            print("Found \(profile.name) with id: \(profile.rssi)")
             
             profiles.append(profile)
         }
