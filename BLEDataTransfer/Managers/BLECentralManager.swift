@@ -190,8 +190,10 @@ extension BLECentralManager: CBCentralManagerDelegate {
             print(error.localizedDescription)
         }
         
+        let delay = TimeInterval(connectionAttempts * 2) // Spacing out re-connection attempts
+        
         if connectionAttempts < maxConnectionRetries {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
                 guard central.state == .poweredOn else {
                     print("Unable to retry connection: central not powered on.")
                     return
