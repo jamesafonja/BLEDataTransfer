@@ -125,13 +125,7 @@ final class BLECentralManager: NSObject, CentralManagerProtocol {
 
 extension BLECentralManager: CBCentralManagerDelegate {
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
-        print("Current central state is: \(central.state.description)")
-        
         delegate?.didUpdateState(isOn: central.state == .poweredOn)
-        
-        if central.state == .poweredOn {
-            getPeripheral()
-        }
     }
     
     func centralManager(
@@ -140,7 +134,7 @@ extension BLECentralManager: CBCentralManagerDelegate {
         advertisementData: [String : Any],
         rssi RSSI: NSNumber
     ) {
-        guard RSSI.intValue >= -50 else { return }
+        guard RSSI.intValue >= -75 else { return }
         
         delegate?.didDiscover(peripheral: peripheral, rssi: RSSI.intValue)
     }
@@ -151,9 +145,8 @@ extension BLECentralManager: CBCentralManagerDelegate {
     }
     
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
-        print("Peripheral connected")
         centralManager.stopScan()
-        // bluetoothState = "Scanning stopped"
+        print("Scanning stopped")
         
         connectionIterationsComplete += 1
         writeIterationsComplete = 0
@@ -193,7 +186,7 @@ extension BLECentralManager: CBPeripheralDelegate {
         
     func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: (any Error)?) {
         if let error = error {
-            // bluetoothState = "Error discovering services: \(error.localizedDescription)"
+            print("Error discovering services: \(error.localizedDescription)")
             return
         }
         
@@ -212,7 +205,7 @@ extension BLECentralManager: CBPeripheralDelegate {
     
     func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: (any Error)?) {
         if let error = error {
-            // bluetoothState = "Error discovering characteristics: \(error.localizedDescription)"
+            print("Error discovering characteristics: \(error.localizedDescription)")
             cleanUp()
             return
         }
@@ -228,7 +221,7 @@ extension BLECentralManager: CBPeripheralDelegate {
     
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: (any Error)?) {
         if let error = error {
-            // bluetoothState = "Error discovering characteristics: \(error.localizedDescription)"
+            print("Error discovering characteristics: \(error.localizedDescription)")
             cleanUp()
             return
         }
@@ -238,13 +231,13 @@ extension BLECentralManager: CBPeripheralDelegate {
             let stringFromData = String(data: characteristicData, encoding: .utf8)
         else { return }
         
-        // bluetoothState = "Received \(characteristicData.count) bytes: \(stringFromData)"
+        print("Received \(characteristicData.count) bytes: \(stringFromData)")
         
         if
             stringFromData == "EOM",
             let text = String(data: self.data, encoding: .utf8)
         {
-            // self.characteristicText = text
+            print("String from characteritic: \(text)")
             writeData()
         } else {
             data.append(characteristicData)
@@ -253,22 +246,22 @@ extension BLECentralManager: CBPeripheralDelegate {
     
     func peripheral(_ peripheral: CBPeripheral, didUpdateNotificationStateFor characteristic: CBCharacteristic, error: (any Error)?) {
         if let error = error {
-            // bluetoothState = "Error changing notification state: \(error.localizedDescription)"
+            print("Error changing notification state: \(error.localizedDescription)")
             return
         }
         
         guard characteristic.uuid == TargetService.characteristicUUID else { return }
         
         if characteristic.isNotifying {
-            // bluetoothState = "Notification began on \(characteristic)"
+            print("Notification began on \(characteristic)")
         } else {
-            // bluetoothState = "Notification stopped on \(characteristic). Disconnecting..."
+            print("Notification stopped on \(characteristic). Disconnecting...")
             cleanUp()
         }
     }
     
     func peripheralIsReady(toSendWriteWithoutResponse peripheral: CBPeripheral) {
-        // bluetoothState = "Peripheral is ready, send data"
+        print("Peripheral is ready, send data")
         writeData()
     }
     

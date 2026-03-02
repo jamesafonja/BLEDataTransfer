@@ -17,24 +17,49 @@ struct CentralScreen: View {
     }
 
     var body: some View {
-        List {
-            Section("BLE") {
-                HStack {
-                    Text("Connection")
-                    Spacer()
-                    Text(centralViewModel.isOn ? "On" : "Off")
-                        .foregroundColor(centralViewModel.isOn ? .green : .red)
+        ZStack {
+            List {
+                Section("BLE") {
+                    HStack {
+                        Text("Connection")
+                        Spacer()
+                        Text(centralViewModel.isOn ? "On" : "Off")
+                            .foregroundColor(centralViewModel.isOn ? .green : .red)
+                    }
+                }
+                
+                Section("Devices") {
+                    ForEach(centralViewModel.profiles) { profile in
+                        HStack {
+                            Text(profile.name)
+                            Spacer()
+                            SignalStrengthIndicator(rssi: profile.rssi)
+                        }
+                    }
+                }
+            }
+            .toolbar {
+                ToolbarItem(placement: .automatic) {
+                    Button(centralViewModel.state == .idle ? "Scan" : "Stop") {
+                        
+                        if centralViewModel.state == .idle {
+                            centralViewModel.startScanning()
+                        } else {
+                            centralViewModel.stopScanning()
+                        }
+                    }
                 }
             }
             
-            Section("Devices") {
-                ForEach(centralViewModel.profiles) { profile in
-                    HStack {
-                        Text(profile.name)
-                        Spacer()
-                        SignalStrengthIndicator(rssi: profile.rssi)
-                    }
-                }
+            if centralViewModel.state == .scanning {
+                LoadingView()
+            }
+            
+            if centralViewModel.state == .idle && centralViewModel.profiles.isEmpty {
+                Text("Press the \"scan\" button to discover peripherals")
+                    .font(.title3)
+                    .foregroundStyle(Color.gray.opacity(0.75))
+                    .padding(.horizontal, 20)
             }
         }
         .navigationTitle("Central")
@@ -45,5 +70,7 @@ struct CentralScreen: View {
 }
 
 #Preview {
-    CentralScreen(manager: BLECentralManager())
+    NavigationStack {
+        CentralScreen(manager: BLECentralManager())
+    }
 }

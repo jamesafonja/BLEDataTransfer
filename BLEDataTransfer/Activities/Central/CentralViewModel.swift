@@ -17,6 +17,12 @@ final class CentralViewModel: ObservableObject {
     
     private let manager: BLECentralManager
     
+    enum State {
+        case scanning, idle
+    }
+    
+    @Published private(set) var state: State = .idle
+    
     init(manager: BLECentralManager) {
         self.manager = manager
         self.manager.delegate = self
@@ -26,8 +32,15 @@ final class CentralViewModel: ObservableObject {
         statusText = "Connecting to \(profile.name)"
     }
     
+    func startScanning() {
+        guard state != .scanning else { return }
+        state = .scanning
+        manager.startScanning()
+    }
+    
     func stopScanning() {
         manager.stopScanning()
+        state = .idle
         statusText = "Scanning stopped"
     }
 }
@@ -59,6 +72,10 @@ extension CentralViewModel: BLECentralManagerDelegate {
         }
         
         configureProfiles()
+        
+        if profiles.count >= 10 && state == .scanning {
+            stopScanning()
+        }
     }
     
     func configureProfiles() {
