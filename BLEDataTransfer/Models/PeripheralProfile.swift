@@ -12,5 +12,16 @@ struct PeripheralProfile: Identifiable {
     let id: UUID
     let name: String
     var rssi: Int
-    let peripheral: CBPeripheral
+    let peripheral: CBPeripheral?
+}
+
+extension PeripheralProfile {
+    static var sample: PeripheralProfile {
+        PeripheralProfile(
+            id: UUID(uuidString: "DB5B50F4-43DC-756B-0E84-07D9D2DBDB5C")!,
+            name: "Temperature Sensor",
+            rssi: -25,
+            peripheral: nil
+        )
+    }
 }
