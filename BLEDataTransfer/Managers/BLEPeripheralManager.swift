@@ -7,16 +7,16 @@
 
 import CoreBluetooth
 
-protocol BLEPeripheralDelegate: AnyObject {
+protocol BLEPeripheralManagerDelegate: AnyObject {
     func didUpdateState(isOn: Bool)
     func didSubscribe(to peripheral: CBPeripheralManager, central: CBCentral, characteristic: CBCharacteristic)
     func didUnsubscribe(from peripheral: CBPeripheralManager, central: CBCentral, characteristic: CBCharacteristic)
     func managerIsReadyToUpdate(subscribers: CBPeripheralManager)
-    
+    func didReceiveWrite(peripheralManager: CBPeripheralManager, requests: [CBATTRequest])
 }
 
 final class BLEPeripheralManager: NSObject {
-    weak var delegate: BLEPeripheralDelegate?
+    weak var delegate: BLEPeripheralManagerDelegate?
     
     private var peripheralManager: CBPeripheralManager!
     var transferCharacteristic: CBMutableCharacteristic?
@@ -56,6 +56,7 @@ final class BLEPeripheralManager: NSObject {
             if didSend {
                 isSendingEOM = false
             }
+            
             return
         }
         
@@ -123,11 +124,17 @@ extension BLEPeripheralManager: CBPeripheralManagerDelegate {
     }
     
     func peripheralManager(_ peripheral: CBPeripheralManager, central: CBCentral, didUnsubscribeFrom characteristic: CBCharacteristic) {
+        connectedCentral = nil
         delegate?.didUnsubscribe(from: peripheral, central: central, characteristic: characteristic)
     }
     
     func peripheralManagerIsReady(toUpdateSubscribers peripheral: CBPeripheralManager) {
+        sendData()
         delegate?.managerIsReadyToUpdate(subscribers: peripheral)
+    }
+    
+    func peripheralManager(_ peripheral: CBPeripheralManager, didReceiveWrite requests: [CBATTRequest]) {
+        delegate?.didReceiveWrite(peripheralManager: peripheral, requests: requests)
     }
     
 }
