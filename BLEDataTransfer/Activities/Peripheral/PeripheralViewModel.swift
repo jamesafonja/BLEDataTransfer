@@ -11,8 +11,10 @@ import SwiftUI
 
 @MainActor
 final class PeripheralViewModel: ObservableObject {
+    @Published var receivedText: String = ""
     @Published var text: String = ""
-    @Published var isOn: Bool = false
+    @Published var displayText: String = ""
+    @Published private(set) var state: BLEPeripheralManager.PeripheralState = .off
     
     private let manager: BLEPeripheralManager
     
@@ -20,30 +22,50 @@ final class PeripheralViewModel: ObservableObject {
     
     init(manager: BLEPeripheralManager) {
         self.manager = manager
+        manager.delegate = self
+    }
+    
+    func sendData() {
+        guard let data = text.data(using: .utf8) else { return }
+        manager.send(data)
+    }
+    
+    func stopAdvertising() {
+        manager.stopAdvertising()
     }
     
 }
 
 extension PeripheralViewModel: BLEPeripheralManagerDelegate {
-    func didUpdateState(isOn: Bool) {
-        self.isOn = isOn
-    }
     
     func didSubscribe(to peripheral: CBPeripheralManager, central: CBCentral, characteristic: CBCharacteristic) {
-        //
+        sendData()
     }
     
     func didUnsubscribe(from peripheral: CBPeripheralManager, central: CBCentral, characteristic: CBCharacteristic) {
-        //
+        
+        print("Unsubscribed from characteristic")
     }
     
     func managerIsReadyToUpdate(subscribers: CBPeripheralManager) {
-        //
+        sendData()
     }
     
     func didReceiveWrite(peripheralManager: CBPeripheralManager, requests: [CBATTRequest]) {
-        //
+        for request in requests {
+            guard
+                let value = request.value,
+                let stringFromData = String(data: value, encoding: .utf8)
+            else {
+                print("Failed to retrieve write data")
+                return
+            }
+            
+            displayText = stringFromData
+        }
     }
     
-    
+    func peripheralDidChange(state: BLEPeripheralManager.PeripheralState) {
+        self.state = state
+    }
 }

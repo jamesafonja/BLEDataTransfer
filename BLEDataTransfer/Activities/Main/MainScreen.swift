@@ -23,7 +23,7 @@ struct MainScreen: View {
                 }
                 
                 NavigationLink {
-                    PeripheralScreen(manager: BLEPeripheralManager())
+                    PeripheralScreen(manager: BLEPeripheralManager(), profile: PeripheralProfile.sample)
                 } label: {
                     Text("Peripheral")
                         .padding(12)

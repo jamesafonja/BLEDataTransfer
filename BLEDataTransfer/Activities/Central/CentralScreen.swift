@@ -52,7 +52,11 @@ struct CentralScreen: View {
             }
             
             if centralViewModel.state == .scanning {
-                LoadingView()
+                VStack {
+                    LoadingView()
+                    Text(centralViewModel.statusText)
+                        .foregroundStyle(Color.gray.opacity(0.5))
+                }
             }
             
             if centralViewModel.state == .idle && centralViewModel.profiles.isEmpty {

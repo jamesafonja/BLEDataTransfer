@@ -10,17 +10,50 @@ import SwiftUI
 
 struct PeripheralScreen: View {
     @StateObject private var peripheralViewModel: PeripheralViewModel
-    
-    init(manager: BLEPeripheralManager) {
+    @State private var notes: String = ""
+    let profile: PeripheralProfile
+
+    init(manager: BLEPeripheralManager, profile: PeripheralProfile) {
         let viewModel = PeripheralViewModel(manager: manager)
         _peripheralViewModel = StateObject(wrappedValue: viewModel)
+        self.profile = profile
     }
 
     var body: some View {
-        Text("Hello, World!")
+        List {
+            Section("Name") {
+                HStack {
+                    Text(profile.name)
+                        .foregroundStyle(Color.secondary)
+                    Spacer()
+                    SignalStrengthIndicator(rssi: profile.rssi)
+                }
+            }
+            
+            Section("BLE Status") {
+                Text(peripheralViewModel.state.message)
+            }
+
+            Section("RSSI") {
+                Text(String(profile.rssi))
+                    .foregroundStyle(Color.secondary)
+            }
+            
+            Section("Notes") {
+                TextEditor(text: $notes)
+                    .frame(height: 200)
+            }
+        }
+        .navigationTitle("Peripheral")
+        .onDisappear {
+            peripheralViewModel.stopAdvertising()
+        }
     }
+
 }
 
 #Preview {
-    PeripheralScreen(manager: BLEPeripheralManager())
+    NavigationStack {
+        PeripheralScreen(manager: BLEPeripheralManager(), profile: PeripheralProfile.sample)
+    }
 }
