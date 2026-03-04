@@ -71,12 +71,14 @@ final class BLEPeripheralManager: NSObject {
             
             if didSend {
                 isSendingEOM = false
+                sendDataIndex = 0
             }
             
             return
         }
         
         if sendDataIndex >= data.count { return }
+        
         var didSend = true
         
         while didSend {
@@ -106,6 +108,7 @@ final class BLEPeripheralManager: NSObject {
                         
                 if eomSent {
                     isSendingEOM = false
+                    sendDataIndex = 0
                 }
                 
                 return
@@ -177,6 +180,11 @@ extension BLEPeripheralManager: CBPeripheralManagerDelegate {
     
     func peripheralManager(_ peripheral: CBPeripheralManager, central: CBCentral, didUnsubscribeFrom characteristic: CBCharacteristic) {
         connectedCentral = nil
+        
+        if !peripheral.isAdvertising {
+            peripheral.startAdvertising([CBAdvertisementDataServiceUUIDsKey: [TargetService.serviceUUID]])
+        }
+        
         state = .advertising
         delegate?.didUnsubscribe(from: peripheral, central: central, characteristic: characteristic)
     }

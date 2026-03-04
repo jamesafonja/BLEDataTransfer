@@ -43,7 +43,6 @@ extension PeripheralViewModel: BLEPeripheralManagerDelegate {
     }
     
     func didUnsubscribe(from peripheral: CBPeripheralManager, central: CBCentral, characteristic: CBCharacteristic) {
-        
         print("Unsubscribed from characteristic")
     }
     
@@ -62,6 +61,9 @@ extension PeripheralViewModel: BLEPeripheralManagerDelegate {
             }
             
             displayText = stringFromData
+            
+            peripheralManager.respond(to: request, withResult: .success)
+
         }
     }
     

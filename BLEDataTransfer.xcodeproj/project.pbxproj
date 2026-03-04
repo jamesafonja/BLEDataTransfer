@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		1B9C35782F5135DB00089DC7 /* ImpossiBLE in Frameworks */ = {isa = PBXBuildFile; productRef = 1B9C35772F5135DB00089DC7 /* ImpossiBLE */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		1BA487412F4C4828009E6064 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -52,6 +56,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1B9C35782F5135DB00089DC7 /* ImpossiBLE in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -72,12 +77,20 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		1B9C35762F5135DB00089DC7 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		1BA4872A2F4C4827009E6064 = {
 			isa = PBXGroup;
 			children = (
 				1BA487352F4C4827009E6064 /* BLEDataTransfer */,
 				1BA487432F4C4828009E6064 /* BLEDataTransferTests */,
 				1BA4874D2F4C4828009E6064 /* BLEDataTransferUITests */,
+				1B9C35762F5135DB00089DC7 /* Frameworks */,
 				1BA487342F4C4827009E6064 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -112,6 +125,7 @@
 			);
 			name = BLEDataTransfer;
 			packageProductDependencies = (
+				1B9C35772F5135DB00089DC7 /* ImpossiBLE */,
 			);
 			productName = BLEDataTransfer;
 			productReference = 1BA487332F4C4827009E6064 /* BLEDataTransfer.app */;
@@ -195,6 +209,9 @@
 			);
 			mainGroup = 1BA4872A2F4C4827009E6064;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				1B9C35722F5134D100089DC7 /* XCRemoteSwiftPackageReference "ImpossiBLE" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 1BA487342F4C4827009E6064 /* Products */;
 			projectDirPath = "";
@@ -400,6 +417,7 @@
 				DEVELOPMENT_TEAM = KYTZ9T35MJ;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "Connection is needed to operate the device";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -432,6 +450,7 @@
 				DEVELOPMENT_TEAM = KYTZ9T35MJ;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "Connection is needed to operate the device";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -578,6 +597,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		1B9C35722F5134D100089DC7 /* XCRemoteSwiftPackageReference "ImpossiBLE" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/mickeyl/ImpossiBLE";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.4.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		1B9C35772F5135DB00089DC7 /* ImpossiBLE */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1B9C35722F5134D100089DC7 /* XCRemoteSwiftPackageReference "ImpossiBLE" */;
+			productName = ImpossiBLE;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 1BA4872B2F4C4827009E6064 /* Project object */;
 }
