@@ -15,7 +15,6 @@ protocol BLEPeripheralManagerDelegate: AnyObject {
     func managerIsReadyToUpdate(subscribers: CBPeripheralManager)
     func didReceiveWrite(peripheralManager: CBPeripheralManager, requests: [CBATTRequest])
     func peripheralDidChange(state: BLEPeripheralManager.PeripheralState)
-
 }
 
 // MARK: - BLEPeripheralManager

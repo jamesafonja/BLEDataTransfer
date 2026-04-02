@@ -43,6 +43,7 @@ final class CentralViewModel: ObservableObject {
         state = .idle
         statusText = "Scanning stopped"
     }
+    
 }
 
 extension CentralViewModel: BLECentralManagerDelegate {

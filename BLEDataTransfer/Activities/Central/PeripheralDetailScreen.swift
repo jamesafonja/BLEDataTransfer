@@ -31,14 +31,12 @@ struct PeripheralDetailScreen: View {
             }
         }
         .navigationTitle("Peripheral")
-        .onAppear {
-            notesIsFocused = true
-        }
+        .onAppear { notesIsFocused = true }
     }
 }
 
 #Preview {
     NavigationStack {
-        PeripheralDetailScreen(profile: PeripheralProfile.sample)
+        PeripheralDetailScreen(profile: .sample)
     }
 }
